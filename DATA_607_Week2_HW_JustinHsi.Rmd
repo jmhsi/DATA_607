@@ -1,0 +1,81 @@
+---
+title: "DATA_607_Week2_HW_JustinHsi"
+author: "Justin Hsi"
+date: "2/6/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install.packages('RMariaDB')
+library(DBI)
+library(readr)
+library(RMariaDB)
+library(reshape)
+library(dplyr)
+
+# stick sensitive info in keys.R
+# ideas from https://blog.revolutionanalytics.com/2015/11/how-to-store-and-use-authentication-details-with-r.html
+source('keys.R')
+```
+
+```{r}
+drv = dbDriver("MariaDB")
+con = dbConnect(drv, username=id, password=pw, dbname='movies')
+```
+
+```{r}
+l <- list('Julia' = list('Avengers: Endgame'=NA, 'Us'=NA, 'Toy Story 4'=2, 'Knives Out'=NA, 'Booksmart'=NA, 'The Farewell'=3),
+          'Jie' = list('Avengers: Endgame'=4, 'Us'=2, 'Toy Story 4'=4, 'Knives Out'=NA, 'Booksmart'=NA, 'The Farewell'=3),
+          'Zuren' = list('Avengers: Endgame'=NA, 'Us'=NA, 'Toy Story 4'=NA, 'Knives Out'=1, 'Booksmart'=NA, 'The Farewell'=NA),
+          'Daniel' = list('Avengers: Endgame'=4, 'Us'=5, 'Toy Story 4'=2, 'Knives Out'=NA, 'Booksmart'=NA, 'The Farewell'=NA),
+          'Stephanie' = list('Avengers: Endgame'=5, 'Us'=3, 'Toy Story 4'=4, 'Knives Out'=NA, 'Booksmart'=NA, 'The Farewell'=4))
+df = ldply(l, data.frame)
+df = df %>% dplyr::rename(Name = .id)
+df
+dbWriteTable(con, 'movie_ratings', df, overwrite=TRUE)
+ex = dbReadTable(con, 'movie_ratings')
+ex
+```
+
+```{r}
+names = c('Julia', 'Jie', 'Zuren', 'Daniel', 'Stephanie')
+movies = c('Avengers: Endgame', 'Us', 'Toy Story 4', 'Knives Out', 'Booksmart', 'The Farewell')
+names_ix = 1:length(names)
+movies_ix = 1:length(movies)
+names_table = data.frame(cbind(names_ix, names))
+movies_table = data.frame(cbind(movies_ix, movies))
+ratings = list(
+  list(1, 'Julia', 3, 'Toy Story 4', 2), 
+  list(1, 'Julia', 6, 'The Farewell', 3),
+  list(2, 'Jie', 1, 'Avengers: Endgame', 4),
+  list(2, 'Jie', 2, 'Us', 2),
+  list(2, 'Jie', 3, 'Toy Story 4', 4),
+  list(2, 'Jie', 6, 'The Farewell', 3),
+  list(3, 'Zuren', 4, 'Knives Out', 1),
+  list(4, 'Daniel', 1, 'Avengers: Endgame', 4),
+  list(4, 'Daniel', 2, 'Us', 5),
+  list(4, 'Daniel', 3, 'Toy Story 4', 2),
+  list(5, 'Stephanie', 1, 'Avengers: Endgame', 5),
+  list(5, 'Stephanie', 2, 'Us', 3),
+  list(5, 'Stephanie', 3, 'Toy Story 4', 4),
+  list(5, 'Stephanie', 6, 'The Farewell', 4)
+  )
+ratings_table = data.frame(do.call(rbind, ratings))
+ratings_table = ratings_table %>% dplyr::rename(names_ix = X1, names = X2, movies_ix = X3, movies = X4, ratings = X5)
+ratings_table$names_ix = as.numeric(ratings_table$names_ix)
+ratings_table$names = as.character(ratings_table$names)
+ratings_table$movies_ix = as.numeric(ratings_table$movies_ix)
+ratings_table$movies = as.character(ratings_table$movies)
+ratings_table$ratings = as.numeric(ratings_table$ratings)
+ratings_table
+dbWriteTable(con, 'movies_table', movies_table, overwrite=TRUE)
+dbWriteTable(con, 'names_table', names_table, overwrite=TRUE)
+dbWriteTable(con, 'ratings_table', ratings_table, overwrite=TRUE)
+
+ratings_table_2 = dbReadTable(con, 'ratings_table')
+reshaped = cast(ratings_table_2, names ~ movies, value='ratings')
+reshaped
+```
