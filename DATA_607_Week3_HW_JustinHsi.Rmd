@@ -1,0 +1,116 @@
+---
+title: "Data 607 Week 3 Assignment"
+author: "Justin Hsi"
+date: "2/14/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(RCurl)
+```
+
+#1
+Provide code that identifies the majors that contain either "DATA" or "STATISTICS"
+```{r}
+majors_df = read.csv(text=getURL('https://raw.githubusercontent.com/fivethirtyeight/data/master/college-majors/majors-list.csv'))
+```
+
+```{r}
+head(majors_df)
+# check if major is all caps
+majors = levels(majors_df$Major)
+match_data_stats = str_detect(majors, regex("DATA|STATISTICS", ignore_case=TRUE))
+majors[match_data_stats]
+```
+
+
+#2
+Write code that transforms the data below:
+```{r}
+log_output = '[1] "bell pepper"  "bilberry"     "blackberry"   "blood orange"
+
+[5] "blueberry"    "cantaloupe"   "chili pepper" "cloudberry"  
+
+[9] "elderberry"   "lime"         "lychee"       "mulberry"    
+
+[13] "olive"        "salal berry"'
+```
+Into a format like this:
+
+c("bell pepper", "bilberry", "blackberry", "blood orange", "blueberry", "cantaloupe", "chili pepper", "cloudberry", "elderberry", "lime", "lychee", "mulberry", "olive", "salal berry")
+```{r}
+i1 = str_extract_all(log_output, regex('"(.*?)"') )
+i2 = unlist(i1)
+final = str_replace_all(i2, '\\\"', '')
+final
+```
+
+#3 
+Describe, in words, what these expressions will match:
+
+    (.)\1\1 <- Matches any character followed by \1\1 e.g. matches 'b\1\1' (anychar-\-1-\-1)
+```{r}
+rexpr = "(.)\1\1"
+test_str = c("...", "bbb", "(.)\1\1", "(.)(.)(.)", "(.)\1\1(.)\1\1(.)\1\1", "(.)\\1\\1(.)\\1\\1(.)\\1\\1",  "(.)\1\1(.)\1\1(.)\1\1(.)\1\1(.)\1\1", ")\1\1)\1\1)\1\1", ".)\1\1.)\1\1.)\1\1", ".\1\1.\1\1.\1\1", "b\1\1b\1\1b\1\1")
+str_view_all(test_str, rexpr)
+```
+
+    "(.)(.)\\2\\1" <- Matches any 2 character palindrome inside double quotes e.g.'"!**!" ("group1-group2-group2-group1")
+```{r}
+rexpr = '"(.)(.)\\2\\1"'
+test_str = c('abba', 'abab', '"abba"', '"baba"', 'baba', '"aaaaabbbbbbbbabab"', '"aabbab"', 'a"abba"b', '"!**!"', "'*!!*'", '"!*8*!"', '"1221"')
+str_view_all(test_str, rexpr)
+```
+
+    (..)\1 <- matches any 2 characters followed by a \1 e.g. '/3\1' (anychar-anychar-\-1)
+```{r}
+rexpr = '(..)\1'
+test_str = c('bb', 'b2\1', '/3\1', '\\\\\\1', '\\\\\1', 'efg\\\\\1abcd', 'abcdefsgz\1fasdf')
+str_view_all(test_str, rexpr)
+```    
+    
+    "(.).\\1.\\1" <- matches any 2 characters sandwiched between the same character 3 times inside double quotes e.g. '"b*b!b"' ("group1-anychar-group1-anychar-group1")
+```{r}
+rexpr = '"(.).\\1.\\1"'
+test_str = c('b*b!b', '"b*b!b"', '"b*b!c"', '"b*bb!b"', '"b**b!b"', 'aaaa"b*b!b"bbb')
+str_view_all(test_str, rexpr)
+```        
+    
+    "(.)(.)(.).*\\3\\2\\1" <- matches 0 or more characters sandwhiched between a palindrome of 6 characters inside double quotes e.g. '"123ab321"' ("group1-group2-group3-0 or more anychar-group3-group2-group1")
+```{r}
+rexpr = '"(.)(.)(.).*\\3\\2\\1"'
+test_str = c('123aaaaa321', '"123aaaaa321"', '"123321"', '"123ab321"', 'aaa"123ab321"bbb')
+str_view_all(test_str, rexpr)
+```            
+
+#4 
+Construct regular expressions to match words that: (assuming match the whole word)
+
+    Start and end with the same character.
+    rexpr -> ^(.).*\\1$
+```{r}
+rexpr = '^(.).*\\1$'
+test_str = c('123aaaaa321', '"123aaaaa321"', '123ab32', '1cxboiasdlk1', 'zaesfasZ', 'zadsfsfz"')
+str_view_all(test_str, rexpr)
+```                
+    Contain a repeated pair of letters (e.g. "church" contains "ch" repeated twice.)
+    rexpr -> (..).*\\1
+```{r}
+rexpr = '^.*(..).*\\1.*$'
+test_str = c('123aaaaa321', '"123aaaaa321"', '123aaa32', '123aaaa32', '123abab', '12xabyabz12', '21xabyabz12')
+str_view_all(test_str, rexpr)
+```         
+    Contain one letter repeated in at least three places (e.g. "eleven" contains three "e"s.)
+    rexpr -> .*(.)(.*\\1.*){2,}
+```{r}
+rexpr = '.*(.)(.*\\1.*){2,}'
+test_str = c('eleven', 'tweleve', 'a123aa32', '123aa32', 'abcdef3 ghijkl3mnopqr3stuv3wxyz3')
+str_view_all(test_str, rexpr)
+```     
