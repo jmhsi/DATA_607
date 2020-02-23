@@ -1,0 +1,59 @@
+---
+title: "607_Project_1"
+author: "Justin Hsi"
+date: "2/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+# load data in
+data = readLines('tournamentinfo.txt')
+# get rid of the long sets of dashes
+dashes = "-----------------------------------------------------------------------------------------"
+# make whitespace more manageable
+data = setdiff(data, dashes)
+data = str_replace_all(data, "[ ]{2,}", "")
+# consecutive rows are about same person
+# split consecutive rows
+df1 = data[c(TRUE, FALSE)]
+df2 = data[c(FALSE, TRUE)]
+
+# (?=|) grabs upto the right "|" symbol
+# get names
+names = trimws(str_extract_all(tail(df1,-1), "[A-Z- ]{2,}(?=|)"))
+# get state
+states = trimws(str_extract_all(tail(df2,-1), "[A-Z]{2}(?=|)"))
+# get points
+points = trimws(str_extract_all(tail(df1,-1), "[0-9].[0-9](?=|)"))
+# get prerating
+prerating = trimws(str_extract(tail(df2,-1), "[0-9]+(?=P|-)"))
+fdf = as.data.frame(cbind(names, states, points, prerating))
+fdf$points = as.numeric(as.character(fdf$points))
+fdf$prerating = as.numeric(as.character(fdf$prerating))
+
+# get avg_opp_pre
+# need ratings of opponents played and how many games played
+opp_ids = str_extract_all(tail(df1,-1), "(?<=[A-Z])[0-9]+(?=|)")
+games_played = lengths(opp_ids)
+opp_ids = lapply(opp_ids, as.numeric)
+sums = c()
+for(i in 1:length(opp_ids)) {
+  p_row = unlist(opp_ids[i])
+  p_sum = sum(fdf$prerating[p_row])
+  sums[i] = p_sum
+}
+avg_opp_pre = sums/games_played
+fdf$avg_opp_pre = avg_opp_pre
+fdf
+write.csv(fdf, 'tournament_info.csv')
+```
+```{r}
+# verify
+df = read_csv('tournament_info.csv')
+df
+```

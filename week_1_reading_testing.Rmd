@@ -1,0 +1,11 @@
+---
+title: "Week 1 Reading Follow Along"
+output: html_document
+---
+
+```{r}
+library(stringr)
+library(XML)
+library(maps)
+library(rvest)
+```
