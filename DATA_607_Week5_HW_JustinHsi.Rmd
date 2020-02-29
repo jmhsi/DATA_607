@@ -40,7 +40,7 @@ write.csv(df, 'flights.csv', row.names=FALSE)
 #2
 Read in csv from github, fill in two missing airline values
 ```{r}
-df = read_csv('flights.csv')
+df = read_csv('https://raw.githubusercontent.com/jmhsi/DATA_607/master/flights.csv')
 # reshaped = cast(ratings_table_2, names ~ movies, value='ratings')
 # fill missing Airline lines
 df[2,1] = 'Alaska'
