@@ -1,0 +1,88 @@
+---
+title: "Data 607 Week 5 Assignment"
+author: "Justin Hsi"
+date: "2/27/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(RCurl)
+#library(reshape)
+library(ggplot2)
+library(knitr)
+```
+
+
+Overview:
+We are tasked with creating the csv pictured in the assignment, loading in the csv in to R,
+and cleaning/reshaping the data into a format where we can do analysis. I use tidyverse
+and ggplot2 to do this.
+
+
+#1
+First I need to create a .csv file in the same format as the table shown in the instructions
+```{r}
+r1 = c('Alaska', 'on time', 497, 221, 212, 503, 1841)
+r2 = c(NA, 'delayed', 62, 12, 20, 102, 305)
+r3 = rep(NA, 7)
+r4 = c('AM WEST', 'on time', 694, 4840, 383, 320, 201)
+r5 = c(NA, 'delayed', 117, 415, 65, 129, 61)
+df = data.frame(t(cbind(r1, r2, r3, r4, r5)))
+colnames(df) = c(NA, NA, 'Los Angeles', 'Phoenix', 'San Diego', 'San Francisco', 'Seattle')
+write.csv(df, 'flights.csv', row.names=FALSE)
+```
+
+#2
+Read in csv from github, fill in two missing airline values
+```{r}
+df = read_csv('flights.csv')
+# reshaped = cast(ratings_table_2, names ~ movies, value='ratings')
+# fill missing Airline lines
+df[2,1] = 'Alaska'
+df[5,1] = 'AM WEST'
+kable(df, caption='Data from csv with added airline information')
+```
+
+We use pivot_longer to turn columns 3:7 into a single column called location
+```{r}
+df = df %>% pivot_longer(cols = 3:7, names_to = 'location', values_to ='counts', values_drop_na = TRUE)
+colnames(df) = c('airline', 'status', 'location', 'counts')
+kable(df, caption='Pivot longer the location column')
+```
+
+Pivot the status column into 2 columns since we are going to be doing analysis about delayed vs on time.
+```{r}
+df = df %>% pivot_wider(names_from=status, values_from=counts) %>% arrange(airline)
+kable(df, caption='Pivot wider the status column')
+```
+
+#3
+Perform analysis to compare the arrival delays for the two airlines.
+Make totals column to find percents with.
+```{r}
+df$total_flights = df$`on time` + df$delayed
+df$pct_on_time = df$`on time`/df$total_flights
+df$pct_delayed = df$delayed/df$total_flights
+df = df %>% pivot_longer(cols = 6:7, names_to = 'pct_status', values_to = 'pct')
+```
+```{r}
+delays_df = df %>% filter(pct_status == 'pct_delayed')
+ontime_df = df %>% filter(pct_status == 'pct_on_time')
+alaska_df = df %>% pivot_wider(names_from = pct_status, values_from = pct) %>% filter(airline == 'Alaska')
+amwest_df = df %>% pivot_wider(names_from = pct_status, values_from = pct) %>% filter(airline == 'AM WEST')
+alaska_overall_delay_pct = sum(alaska_df$delayed)/sum(alaska_df$total_flights)
+amwest_overall_delay_pct = sum(amwest_df$delayed)/sum(amwest_df$total_flights)
+ggplot(delays_df, aes(x = location, y = pct, fill = airline)) + geom_bar(stat = 'identity', position = 'dodge') + ylab("pct_delays") + annotate("text", x = 2, y = .28, label = paste("Overall Alaska Delay Rate:", alaska_overall_delay_pct)) +
+annotate("text", x = 2.1, y = .25, label = paste("Overall AMWEST Delay Rate:", amwest_overall_delay_pct))
+```
+
+Conclusions:
+We can see across all locations that Alaska has a smaller percentage of delayed arrivals.
+However, this contrasts with the overall delay rate, which shows that AMWEST actually
+has a lower overall percent of delayed arrivals to total flights. So depending on the
+context, our determination of which airline has more delays can change.
