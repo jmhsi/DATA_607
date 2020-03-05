@@ -1,0 +1,57 @@
+---
+title: "607_Project_2_1"
+author: "Justin Hsi"
+date: "3/5/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(knitr)
+```
+
+The goal of Project 2 is to choose wide/untidy datasets from Week 5 Discussion, ready from CSV into R to tidy/transform as needed, and perform the analysis requested in the discussion. 
+I will start with my own Week 5 Discussion [text](https://bbhosted.cuny.edu/webapps/discussionboard/do/message?action=list_messages&course_id=_1838295_1&nav=discussion_board_entry&conf_id=_2012332_1&forum_id=_2105976_1&message_id=_36290919_1)
+
+Read data from original repo and write csv.
+```{r}
+df = read_csv('https://gist.githubusercontent.com/Kimmirikwa/b69d0ea134820ea52f8481991ffae93e/raw/4db7b1698035ee29885d10e1a59bd902716ae168/student_results.csv')
+write.csv(df, 'student_results.csv', row.names=FALSE)
+```
+
+Load in data and tidy-up to long form
+```{r}
+df = read_csv('student_results.csv')
+# split out "sex and age" into their own columns
+df = df %>% separate('sex and age', into= c('sex', 'age'), sep = "_", remove = TRUE)
+# turn "age" into a numeric col
+df$age = as.numeric(df$age)
+# clean "test number" col to just numeric
+df$test_number = as.numeric(str_extract(df$'test number', '\\d'))
+df = df %>% pivot_longer(cols = 7:9, names_to = 'term number', values_to ='score', values_drop_na = TRUE)
+df$term_number = as.numeric(str_extract(df$'term number', '\\d'))
+kable(df, caption='Tidied data')df
+```
+
+
+Discussion questions: 
+Which students are improving their performance on tests in later terms?
+```{r}
+df$name_testn = paste(df$name, df$test_number)
+ggplot(df, aes(x = name_testn, y = score, fill=factor(term_number))) + geom_bar(stat = 'identity', position = 'dodge') + labs(x = 'Name and test number')
+```
+We see clear improvement over later terms for Esther on Test 2 and Mike on Test 1.Linda on Test 2, Mike on Test 2, and Sam on Test 1 all had the highest results in term 3 on that specific test, but their term 2 of that test was worse than their term 1.
+
+Do gender and age seem to have any relationship with test performance?
+```{r}
+# check gender
+ggplot(aggregate(df[,9], list(df$sex), mean), aes(x = Group.1, y = score, )) + geom_bar(stat = 'identity', position = 'dodge') + labs(x = 'sex', y = 'average score')
+```
+
+```{r}
+# check age
+ggplot(aggregate(df[,9], list(df$age), mean), aes(x = Group.1, y = score, )) + geom_bar(stat = 'identity', position = 'dodge') + labs(x = 'age', y = 'average score')
+```
+
+For this synthetic dataset, the males do slightly better on average, and those aged 13 do the best while the worst are test scores are from those aged 14.One could make the argument that those who are younger do better on tests.
