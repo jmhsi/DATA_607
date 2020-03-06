@@ -1,5 +1,5 @@
 ---
-title: "607_Project_2_1"
+title: "607_Project_2_2"
 author: "Justin Hsi"
 date: "3/5/2020"
 output: html_document
@@ -12,12 +12,12 @@ library(knitr)
 ```
 
 The goal of Project 2 is to choose wide/untidy datasets from Week 5 Discussion, ready from CSV into R to tidy/transform as needed, and perform the analysis requested in the discussion. 
-I will start with my own Week 5 Discussion [here](https://bbhosted.cuny.edu/webapps/discussionboard/do/message?action=list_messages&course_id=_1838295_1&nav=discussion_board_entry&conf_id=_2012332_1&forum_id=_2105976_1&message_id=_36290919_1)
+I use David Moste Week 5 Discussion [here](https://bbhosted.cuny.edu/webapps/discussionboard/do/message?action=list_messages&course_id=_1838295_1&nav=discussion_board_entry&conf_id=_2012332_1&forum_id=_2105976_1&message_id=_36301547_1)
 
 Read data from original repo and write csv.
 ```{r}
-df = read_csv('https://raw.githubusercontent.com/jmhsi/DATA_607/master/Project%202/student_results.csv')
-write.csv(df, 'student_results.csv', row.names=FALSE)
+df = read_csv('bob_ross.csv')
+write.csv(df, 'bob_ross.csv', row.names=FALSE)
 ```
 
 Load in data and tidy-up to long form
