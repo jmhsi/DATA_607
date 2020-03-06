@@ -1,5 +1,5 @@
 ---
-title: "607_Project_2_2"
+title: "607_Project_2_3"
 author: "Justin Hsi"
 date: "3/5/2020"
 output: html_document
@@ -9,45 +9,47 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(knitr)
+library(gridExtra)
 ```
 
 The goal of Project 2 is to choose wide/untidy datasets from Week 5 Discussion, ready from CSV into R to tidy/transform as needed, and perform the analysis requested in the discussion. 
-I use David Moste Week 5 Discussion [here](https://bbhosted.cuny.edu/webapps/discussionboard/do/message?action=list_messages&course_id=_1838295_1&nav=discussion_board_entry&conf_id=_2012332_1&forum_id=_2105976_1&message_id=_36301547_1)
+I use Chun San Yip's Week 5 Discussion [here](https://bbhosted.cuny.edu/webapps/discussionboard/do/message?action=list_messages&course_id=_1838295_1&nav=discussion_board_entry&conf_id=_2012332_1&forum_id=_2105976_1&message_id=_36394310_1)
 
 Read data from original repo and write csv.
 ```{r}
-df = read_csv('https://raw.githubusercontent.com/jmhsi/DATA_607/master/Project%202/bob_ross.csv')
-write.csv(df, 'bob_ross.csv', row.names=FALSE)
+df = read_csv('https://github.com/jmhsi/DATA_607/raw/master/Project%202/API_EAS_DS2_en_excel_v2_822197.csv')
+dict = read_csv('https://github.com/jmhsi/DATA_607/raw/master/Project%202/EAS_dict.csv')
+write.csv(df, 'API_EAS_DS2_en_excel_v2_822197.csv', row.names=FALSE)
+write.csv(dict, 'EAS_dict.csv', row.names=FALSE)
 ```
 
-Load in data and tidy-up to long form. David recommends pivoting_longer turning each element into an observation and also splitting out season and title
+Load in data and tidy-up to long form. Chun recommends pivoting_longer turning the year columns.
 ```{r}
-df = read_csv('bob_ross.csv')
-# pivot all the subjects to make long
-df = df %>% pivot_longer(cols = 3:ncol(df), names_to = 'subject', values_to ='present', values_drop_na = TRUE)
-season_ep = matrix(unlist(str_extract_all(df$EPISODE, '\\d+')), nrow = nrow(df), byrow=TRUE)
-colnames(season_ep) = c('season', 'episode')
-df = cbind(season_ep, df)
-df = subset(df, select = -c(EPISODE))
-kable(head(df), caption='Tidied data')
+df = read_csv('API_EAS_DS2_en_excel_v2_822197.csv', skip = 2)
+dict = read_csv('EAS_dict.csv')
+colnames(df) = df[1,]
+# drop the header row
+df = df[2:length(df),]
+# grab only the percent data
+pct_dict = dict[grep('%', dict$INDICATOR_NAME),]
+pct_df = df[df$`Indicator Code` %in% pct_dict$INDICATOR_CODE,]
+# pivot all the years to make long
+pct_df = pct_df %>% pivot_longer(cols = 5:ncol(pct_df), names_to = 'year', values_to ='percent', values_drop_na = TRUE)
+kable(head(pct_df), caption='Tidied data')
 ```
 
 
 Discussion questions: 
-I add my own questions as David did not explicitly include something to analyze.
-Which subjects appear the most? Least?
-```{r fig.height=14, fig.width=8}
-sub_df = df %>% filter(present == 1)
-sub_df = sub_df %>% count(subject) %>% mutate(perc = n / nrow(sub_df))
-ggplot(sub_df, aes(x = reorder(subject, perc), y = perc))+ geom_bar(stat = 'identity', color="blue", fill = 'white') + coord_flip()
-```
-We see that by far, the most common subject of paintings are tree(s). The least common subject is an apple frame.
+I add my own question as nothing was specifically mentioned to analyze.
+Which indicator had the most/least pct change over the years presented?
+```{r fig.height=14, fig.width=12}
+sub_df = pct_df %>% group_by(`Indicator Code`) %>% summarise(min_pct = min(percent), max_pct = max(percent), min_year = min(year), max_year = max(year), min_year_pct = percent[which(year == min(year))], max_year_pct = percent[which(year == max(year))])
+sub_df$largest_pct_diff = sub_df$max_pct - sub_df$min_pct
+sub_df$year_max_min_pct_diff = sub_df$max_year_pct - sub_df$min_year_pct
 
-What season had the most and least subjects?
-```{r}
-sub_df = df %>% filter(present == 1)
-sub_df = sub_df %>% count(season) %>% mutate(perc = n / nrow(sub_df))
-ggplot(sub_df, aes(x = reorder(season, perc), y = perc))+ geom_bar(stat = 'identity', color="blue", fill = 'white') + coord_flip()
+plt1 = ggplot(sub_df, aes(x = reorder(`Indicator Code`, year_max_min_pct_diff), y = largest_pct_diff))+ geom_bar(stat = 'identity', color="blue", fill = 'white') + coord_flip() + labs(y="Largest diff in % across all years", x="Indicator Code")
+plt2 = ggplot(sub_df, aes(x = reorder(`Indicator Code`, year_max_min_pct_diff), y = year_max_min_pct_diff))+ geom_bar(stat = 'identity', color="blue", fill = 'white') + coord_flip() + labs(y="Diff in % of most recent year and earliest recorded year", x="Indicator Code")
+grid.arrange(plt1, plt2, ncol=2)
 ```
 
-Season 10 seemed to have the most subjects. Season 25 had the least. 
+We see that TM.TAX.MRCH.BC.ZS has some of the largest difference in percent between years, as well as the largest difference in percent of the earliest recorded year and most recent year. Perhaps unsurprisingly, the Indicator Codes with very little change in percent of earliest recorded year and most recent year also have very little percent difference across all years. Some next steps in analysis could be to look at what these Indicator Codes mean from the data dictionary and see if the percent differences we see make sense comparing earliest to most recent data. 

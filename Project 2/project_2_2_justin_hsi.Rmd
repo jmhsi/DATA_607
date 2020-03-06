@@ -11,7 +11,7 @@ library(tidyverse)
 library(knitr)
 ```
 
-The goal of Project 2 is to choose wide/untidy datasets from Week 5 Discussion, ready from CSV into R to tidy/transform as needed, and perform the analysis requested in the discussion. 
+The goal of Project 2 is to choose wide/untidy datasets from Week 5 Discussion, read from CSV into R to tidy/transform as needed, and perform the analysis requested in the discussion. 
 I use David Moste Week 5 Discussion [here](https://bbhosted.cuny.edu/webapps/discussionboard/do/message?action=list_messages&course_id=_1838295_1&nav=discussion_board_entry&conf_id=_2012332_1&forum_id=_2105976_1&message_id=_36301547_1)
 
 Read data from original repo and write csv.
@@ -20,7 +20,7 @@ df = read_csv('https://raw.githubusercontent.com/jmhsi/DATA_607/master/Project%2
 write.csv(df, 'bob_ross.csv', row.names=FALSE)
 ```
 
-Load in data and tidy-up to long form. David recommends pivoting_longer turning each element into an observation and also splitting out season and title
+Load in data and tidy-up to long form. David recommends pivoting_longer turning each element into an observation and also splitting out season and title.
 ```{r}
 df = read_csv('bob_ross.csv')
 # pivot all the subjects to make long
@@ -34,13 +34,14 @@ kable(head(df), caption='Tidied data')
 
 
 Discussion questions: 
-I add my own questions as David did not explicitly include something to analyze.
-Which subjects appear the most? Least?
+I add my own questions as nothing was explicitly mentioned to analyze.
+Which subjects appear the most and least?
 ```{r fig.height=14, fig.width=8}
 sub_df = df %>% filter(present == 1)
 sub_df = sub_df %>% count(subject) %>% mutate(perc = n / nrow(sub_df))
 ggplot(sub_df, aes(x = reorder(subject, perc), y = perc))+ geom_bar(stat = 'identity', color="blue", fill = 'white') + coord_flip()
 ```
+
 We see that by far, the most common subject of paintings are tree(s). The least common subject is an apple frame.
 
 What season had the most and least subjects?
@@ -50,4 +51,6 @@ sub_df = sub_df %>% count(season) %>% mutate(perc = n / nrow(sub_df))
 ggplot(sub_df, aes(x = reorder(season, perc), y = perc))+ geom_bar(stat = 'identity', color="blue", fill = 'white') + coord_flip()
 ```
 
-Season 10 seemed to have the most subjects. Season 25 had the least. 
+Season 10 seemed to have the most subjects. Season 25 had the least.
+
+It would be interesting how the number of subjects changes per seasons. You might try and investigate if this is because Bob Ross is teaching different techniques, and thus must spends varying amounts of time showing a technique on a particular subject. You might reason that seasons 10, 12, 13, and 14 are technique-dense as there are more subjects in these seasons.

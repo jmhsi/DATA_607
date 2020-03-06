@@ -11,7 +11,7 @@ library(tidyverse)
 library(knitr)
 ```
 
-The goal of Project 2 is to choose wide/untidy datasets from Week 5 Discussion, ready from CSV into R to tidy/transform as needed, and perform the analysis requested in the discussion. 
+The goal of Project 2 is to choose wide/untidy datasets from Week 5 Discussion, read from CSV into R to tidy/transform as needed, and perform the analysis requested in the discussion. 
 I will start with my own Week 5 Discussion [here](https://bbhosted.cuny.edu/webapps/discussionboard/do/message?action=list_messages&course_id=_1838295_1&nav=discussion_board_entry&conf_id=_2012332_1&forum_id=_2105976_1&message_id=_36290919_1)
 
 Read data from original repo and write csv.
@@ -31,6 +31,7 @@ df$age = as.numeric(df$age)
 df$test_number = as.numeric(str_extract(df$'test number', '\\d'))
 df = df %>% pivot_longer(cols = 7:9, names_to = 'term number', values_to ='score', values_drop_na = TRUE)
 df$term_number = as.numeric(str_extract(df$'term number', '\\d'))
+df = subset(df, select= -c(`test number`, `term number`))
 kable(df, caption='Tidied data')
 ```
 
@@ -39,19 +40,20 @@ Discussion questions:
 Which students are improving their performance on tests in later terms?
 ```{r}
 df$name_testn = paste(df$name, df$test_number)
-ggplot(df, aes(x = name_testn, y = score, fill=factor(term_number))) + geom_bar(stat = 'identity', position = 'dodge') + labs(x = 'Name and test number')
+ggplot(df, aes(x = name_testn, y = score, fill=factor(term_number))) + geom_bar(stat = 'identity', position = 'dodge') + labs(x = 'Name and test number') + scale_fill_discrete(name='Term number')
 ```
-We see clear improvement over later terms for Esther on Test 2 and Mike on Test 1.Linda on Test 2, Mike on Test 2, and Sam on Test 1 all had the highest results in term 3 on that specific test, but their term 2 of that test was worse than their term 1.
+
+We see clear improvement over later terms for Esther on Test 2 and Mike on Test 1. Linda on Test 2, Mike on Test 2, and Sam on Test 1 all had the highest results in term 3 on that specific test, but their term 2 of that test was worse than their term 1.
 
 Do gender and age seem to have any relationship with test performance?
 ```{r}
 # check gender
-ggplot(aggregate(df[,9], list(df$sex), mean), aes(x = Group.1, y = score, )) + geom_bar(stat = 'identity', position = 'dodge') + labs(x = 'sex', y = 'average score')
+ggplot(aggregate(df[,7], list(df$sex), mean), aes(x = Group.1, y = score)) + geom_bar(stat = 'identity', position = 'dodge', color='blue', fill='white') + labs(x = 'sex', y = 'average score')
 ```
 
 ```{r}
 # check age
-ggplot(aggregate(df[,9], list(df$age), mean), aes(x = Group.1, y = score, )) + geom_bar(stat = 'identity', position = 'dodge') + labs(x = 'age', y = 'average score')
+ggplot(aggregate(df[,7], list(df$age), mean), aes(x = Group.1, y = score, )) + geom_bar(stat = 'identity', position = 'dodge', color='blue', fill='white') + labs(x = 'age', y = 'average score')
 ```
 
-For this synthetic dataset, the males do slightly better on average, and those aged 13 do the best while the worst are test scores are from those aged 14.One could make the argument that those who are younger do better on tests.
+For this synthetic dataset, the males do slightly better on average, and those aged 13 do the best while the worst are test scores are from those aged 14. One could make the argument that those who are younger do better on tests. If I were to extend the analysis, I might try factoring in the number of observations in each of the groups to see if I thought the graphs were reliable. For example, if there is only one 14 year old that I have data on, maybe I don't want to hastily conclude that 14 year olds do poorly because it is only one data instance. Also you would normally want to know more about your data, for example this is across multiple terms and children grow older, so how might this dataset account for the kids growing older? But again, this dataset is synthetic.
