@@ -1,27 +1,28 @@
 ---
-title: "Data 607 Week 5 Assignment"
+title: "Data 607 Week 7 Assignment"
 author: "Justin Hsi"
-date: "2/27/2020"
+date: "3/15/2020"
 output:
   html_document: default
   pdf_document: default
 ---
 
 
-```{r setup, include=FALSE}
+```{r setup, include=True}
 knitr::opts_chunk$set(echo = TRUE)
-library(tidyverse)
+
+# We need these packages
+library(XML)
 library(RCurl)
-#library(reshape)
-library(ggplot2)
-library(knitr)
+library(jsonlite)
+
+# for some better showing of tables
+library(DT)
 ```
 
 
 Overview:
-We are tasked with creating the csv pictured in the assignment, loading in the csv in to R,
-and cleaning/reshaping the data into a format where we can do analysis. I use tidyverse
-and ggplot2 to do this.
+We are tasked with creating an HTML, XML, and JSON of 3 books from a favorite subject and loading these into R and verifying the data frames are the same.
 
 
 #1

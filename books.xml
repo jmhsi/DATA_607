@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<favbooks>
+
+	<book>
+		<title>Money and Growth: Selected Papers of Allyn Abbott Young (Routledge Studies in the History of Economics)</title>
+		<author>Perry G. Mehrling, Roger J. Sandilands</author>
+		<ISBN-13>978-0415191555</ISBN-13>
+		<pages>464</pages>
+	</book>
+
+	<book>
+		<title>The New Lombard Street: How the Fed Became the Dealer of Last Resort</title>
+		<author>Perry Mehrling</author>
+		<ISBN-13>978-0691143989</ISBN-13>
+		<pages>192</pages>
+	</book>
+	
+	<book>
+		<title>Debt, Crisis, and Recovery: The 1930s and the 1990s (Columbia University Seminar Series)</title>
+		<author>Albert G. Hart, Perry Mehrling</author>
+		<ISBN-13>978-1563246388</ISBN-13>
+		<pages>388</pages>
+	</book>
+	
+</favbooks>
+
