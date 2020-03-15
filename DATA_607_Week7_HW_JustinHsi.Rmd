@@ -8,7 +8,7 @@ output:
 ---
 
 
-```{r setup, include=False}
+```{r setup, include=TRUE, cache = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -50,35 +50,17 @@ books_json = fromJSON(json_url)[[1]]
 kable(books_json)
 ```
 
-Pivot the status column into 2 columns since we are going to be doing analysis about delayed vs on time.
-```{r}
-df = df %>% pivot_wider(names_from=status, values_from=counts) %>% arrange(airline)
-kable(df, caption='Pivot wider the status column')
-```
-
-#3
-Perform analysis to compare the arrival delays for the two airlines.
-Make totals column to find percents with.
-```{r}
-df$total_flights = df$`on time` + df$delayed
-df$pct_on_time = df$`on time`/df$total_flights
-df$pct_delayed = df$delayed/df$total_flights
-df = df %>% pivot_longer(cols = 6:7, names_to = 'pct_status', values_to = 'pct')
-```
+Json already looks different (author is being interpreted as a character vector when there are more than 2). Let us actually compare.
 
 ```{r}
-delays_df = df %>% filter(pct_status == 'pct_delayed')
-ontime_df = df %>% filter(pct_status == 'pct_on_time')
-alaska_df = df %>% pivot_wider(names_from = pct_status, values_from = pct) %>% filter(airline == 'Alaska')
-amwest_df = df %>% pivot_wider(names_from = pct_status, values_from = pct) %>% filter(airline == 'AM WEST')
-alaska_overall_delay_pct = sum(alaska_df$delayed)/sum(alaska_df$total_flights)
-amwest_overall_delay_pct = sum(amwest_df$delayed)/sum(amwest_df$total_flights)
-ggplot(delays_df, aes(x = location, y = pct, fill = airline)) + geom_bar(stat = 'identity', position = 'dodge') + ylab("pct_delays") + annotate("text", x = 2, y = .28, label = paste("Overall Alaska Delay Rate:", alaska_overall_delay_pct)) +
-annotate("text", x = 2.1, y = .25, label = paste("Overall AMWEST Delay Rate:", amwest_overall_delay_pct))
+all.equal(books_html, books_xml) # the html and xml are the same
+all.equal(books_json, books_xml) # but the json is not
+
+# lets look at structure of each
+str(books_html)
+str(books_xml)
+str(books_json)
 ```
 
 Conclusions:
-We can see across all locations that Alaska has a smaller percentage of delayed arrivals.
-However, this contrasts with the overall delay rate, which shows that AMWEST actually
-has a lower overall percent of delayed arrivals to total flights. So depending on the
-context, our determination of which airline has more delays can change.
+We see that the XML and HTML are identical. When loaded into dataframes they turn all the variables into factors by default. For json, we see that the variables are typed as we'd expect them to be with characters, ints, etc. In this case, it may be more desirable to work with JSON as it has tried to infer dtypes which may cut out one step of our data cleaning process. 
