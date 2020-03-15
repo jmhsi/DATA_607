@@ -42,11 +42,12 @@ books_xml = xmlToDataFrame(xmlParse(xml_cont))
 kable(books_xml)
 ```
 
-We use pivot_longer to turn columns 3:7 into a single column called location
+Finally read Json
+
 ```{r}
-df = df %>% pivot_longer(cols = 3:7, names_to = 'location', values_to ='counts', values_drop_na = TRUE)
-colnames(df) = c('airline', 'status', 'location', 'counts')
-kable(df, caption='Pivot longer the location column')
+json_url = "https://raw.githubusercontent.com/jmhsi/DATA_607/master/books.json"
+books_json = fromJSON(json_url)[[1]]
+kable(books_json)
 ```
 
 Pivot the status column into 2 columns since we are going to be doing analysis about delayed vs on time.
