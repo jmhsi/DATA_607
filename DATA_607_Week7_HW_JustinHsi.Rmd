@@ -26,16 +26,12 @@ We are tasked with creating an HTML, XML, and JSON of 3 books from a favorite su
 
 
 #1
-First I need to create a .csv file in the same format as the table shown in the instructions
+First read the html
 ```{r}
-r1 = c('Alaska', 'on time', 497, 221, 212, 503, 1841)
-r2 = c(NA, 'delayed', 62, 12, 20, 102, 305)
-r3 = rep(NA, 7)
-r4 = c('AM WEST', 'on time', 694, 4840, 383, 320, 201)
-r5 = c(NA, 'delayed', 117, 415, 65, 129, 61)
-df = data.frame(t(cbind(r1, r2, r3, r4, r5)))
-colnames(df) = c(NA, NA, 'Los Angeles', 'Phoenix', 'San Diego', 'San Francisco', 'Seattle')
-write.csv(df, 'flights.csv', row.names=FALSE)
+html_url = "https://raw.githubusercontent.com/jmhsi/DATA_607/master/books.html"
+html_cont = getURLContent(htmlURL)
+books_html = readHTMLTable(htmlContent)[[1]]
+datatable(books_htmls)
 ```
 
 #2
