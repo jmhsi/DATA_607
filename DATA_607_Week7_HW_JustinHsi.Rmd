@@ -15,30 +15,31 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 # We need these packages
 library(RCurl)
+library(XML)
+library(jsonlite)
+library(knitr)
 ```
 
 Overview:
 We are tasked with creating an HTML, XML, and JSON of 3 books from a favorite subject and loading these into R and verifying the data frames are the same.
 
 
-#1
-First read the html
+First read html
+
 ```{r}
 html_url = "https://raw.githubusercontent.com/jmhsi/DATA_607/master/books.html"
 html_cont = getURLContent(html_url)
-#books_html = readHTMLTable(htmlContent)[[1]]
-
+books_html = readHTMLTable(html_cont)[[1]]
+kable(books_html)
 ```
 
-#2
-Read in csv from github, fill in two missing airline values
+Next read XML
+
 ```{r}
-df = read_csv('https://raw.githubusercontent.com/jmhsi/DATA_607/master/flights.csv')
-# reshaped = cast(ratings_table_2, names ~ movies, value='ratings')
-# fill missing Airline lines
-df[2,1] = 'Alaska'
-df[5,1] = 'AM WEST'
-kable(df, caption='Data from csv with added airline information')
+xml_url = "https://raw.githubusercontent.com/jmhsi/DATA_607/master/books.xml"
+xml_cont = getURLContent(xml_url)
+books_xml = xmlToDataFrame(xmlParse(xml_cont))
+kable(books_xml)
 ```
 
 We use pivot_longer to turn columns 3:7 into a single column called location

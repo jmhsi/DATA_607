@@ -1,20 +1,21 @@
-{"favbooks" :[
-	{
-	"title" : "Money and Growth: Selected Papers of Allyn Abbott Young (Routledge Studies in the History of Economics)",
-	"author" : ["Perry G. Mehrling", "Roger J. Sandilands"],
-	"ISBN-13" : "978-0415191555<",
-	"pages" : 464,
-	},
-	{
-	"title" : "The New Lombard Street: How the Fed Became the Dealer of Last Resort",
-	"author" : ["Perry Mehrling"],
-	"ISBN-13" : "978-0691143989",
-	"pages" : 192,
-	},
-	{
-	"title" : "Debt, Crisis, and Recovery: The 1930s and the 1990s (Columbia University Seminar Series)",
-	"author" : ["Albert G. Hart", "Perry Mehrling"],
-	"ISBN-13" : "978-1563246388",
-	"pages" : 388,
-	}]
+{
+	"favbooks": [{
+			"title": "Money and Growth: Selected Papers of Allyn Abbott Young (Routledge Studies in the History of Economics)",
+			"author": ["Perry G. Mehrling", "Roger J. Sandilands"],
+			"ISBN-13": "978-0415191555",
+			"pages": 464
+		},
+		{
+			"title": "The New Lombard Street: How the Fed Became the Dealer of Last Resort",
+			"author": ["Perry Mehrling"],
+			"ISBN-13": "978-0691143989",
+			"pages": 192
+		},
+		{
+			"title": "Debt, Crisis, and Recovery: The 1930s and the 1990s (Columbia University Seminar Series)",
+			"author": ["Albert G. Hart", "Perry Mehrling"],
+			"ISBN-13": "978-1563246388",
+			"pages": 388
+		}
+	]
 }
