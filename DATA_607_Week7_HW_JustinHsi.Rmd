@@ -8,18 +8,14 @@ output:
 ---
 
 
-```{r setup, include=True}
+```{r setup, include=False}
 knitr::opts_chunk$set(echo = TRUE)
-
-# We need these packages
-library(XML)
-library(RCurl)
-library(jsonlite)
-
-# for some better showing of tables
-library(DT)
 ```
 
+```{r}
+# We need these packages
+library(RCurl)
+```
 
 Overview:
 We are tasked with creating an HTML, XML, and JSON of 3 books from a favorite subject and loading these into R and verifying the data frames are the same.
@@ -29,9 +25,9 @@ We are tasked with creating an HTML, XML, and JSON of 3 books from a favorite su
 First read the html
 ```{r}
 html_url = "https://raw.githubusercontent.com/jmhsi/DATA_607/master/books.html"
-html_cont = getURLContent(htmlURL)
-books_html = readHTMLTable(htmlContent)[[1]]
-datatable(books_htmls)
+html_cont = getURLContent(html_url)
+#books_html = readHTMLTable(htmlContent)[[1]]
+
 ```
 
 #2
