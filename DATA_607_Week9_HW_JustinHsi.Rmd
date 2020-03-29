@@ -1,0 +1,40 @@
+---
+title: "Data 607 Week 9 Assignment"
+author: "Justin Hsi"
+date: "3/26/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r setup, include=TRUE, cache = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# We need these packages
+library(tidyverse)
+library(jsonlite)
+library(knitr)
+```
+
+Overview:
+We are tasked with choosing one of the New York Times's APIs to read in JSON data and transform it into an R dataframe.First we need to get an api key from [link](https://developer.nytimes.com/apis)
+
+Next we can use GET methods with the API
+
+```{r}
+nyt_api_key = Sys.getenv("nyt_api_key")
+q = paste("http://api.nytimes.com/svc/semantic/v2/concept/name/nytd_des/Baseball.json?fields=all&api-key=",nyt_api_key)
+x = fromJSON(q, flatten=TRUE)
+```
+
+
+
+```{r}
+kable(x[5])
+```
+
+Conclusions:
+We are able to use the NYT API to query data and read into R dataframes. It looks like the semantic API is not straightforward to interpret, nor is it obvious to see how the data may need to be tidied.
