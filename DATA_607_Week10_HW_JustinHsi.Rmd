@@ -1,0 +1,345 @@
+---
+title: "Data 607 Week 10 Assignment"
+author: "Justin Hsi"
+date: "4/5/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r setup, include=TRUE, cache = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# We need these packages
+library(tidyverse)
+library(jsonlite)
+library(knitr)
+library(tidytext)
+library(janeaustenr)
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(ggplot2)
+library(wordcloud)
+library(reshape2)
+library(gutenbergr)
+```
+
+Overview:
+Start by getting the primary example code from chapter 2 of "Text Mining with R" working. Then extend it with a different corpus and incorporate at least one additional sentiment lexicon.
+
+# 2.1
+```{r}
+get_sentiments("afinn")
+get_sentiments("bing")
+get_sentiments("nrc")
+```
+
+# 2.2
+```{r}
+tidy_books <- austen_books() %>%
+  group_by(book) %>%
+  mutate(linenumber = row_number(),
+         chapter = cumsum(str_detect(text, regex("^chapter [\\divxlc]", 
+                                                 ignore_case = TRUE)))) %>%
+  ungroup() %>%
+  unnest_tokens(word, text)
+
+nrc_joy <- get_sentiments("nrc") %>% 
+  filter(sentiment == "joy")
+
+tidy_books %>%
+  filter(book == "Emma") %>%
+  inner_join(nrc_joy) %>%
+  count(word, sort = TRUE)
+
+jane_austen_sentiment <- tidy_books %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(book, index = linenumber %/% 80, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative)
+
+ggplot(jane_austen_sentiment, aes(index, sentiment, fill = book)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~book, ncol = 2, scales = "free_x")
+```
+
+# 2.3
+```{r}
+pride_prejudice <- tidy_books %>% 
+  filter(book == "Pride & Prejudice")
+
+pride_prejudice
+
+afinn <- pride_prejudice %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(index = linenumber %/% 80) %>% 
+  summarise(sentiment = sum(value)) %>% 
+  mutate(method = "AFINN")
+
+bing_and_nrc <- bind_rows(pride_prejudice %>% 
+                            inner_join(get_sentiments("bing")) %>%
+                            mutate(method = "Bing et al."),
+                          pride_prejudice %>% 
+                            inner_join(get_sentiments("nrc") %>% 
+                                         filter(sentiment %in% c("positive", 
+                                                                 "negative"))) %>%
+                            mutate(method = "NRC")) %>%
+  count(method, index = linenumber %/% 80, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative)
+
+bind_rows(afinn, 
+          bing_and_nrc) %>%
+  ggplot(aes(index, sentiment, fill = method)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~method, ncol = 1, scales = "free_y")
+
+get_sentiments("nrc") %>% 
+     filter(sentiment %in% c("positive", 
+                             "negative")) %>% 
+  count(sentiment)
+
+get_sentiments("bing") %>% 
+  count(sentiment)
+```
+
+# 2.4
+```{r}
+bing_word_counts <- tidy_books %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup()
+
+bing_word_counts
+
+bing_word_counts %>%
+  group_by(sentiment) %>%
+  top_n(10) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(y = "Contribution to sentiment",
+       x = NULL) +
+  coord_flip()
+
+custom_stop_words <- bind_rows(tibble(word = c("miss"), 
+                                          lexicon = c("custom")), 
+                               stop_words)
+
+custom_stop_words
+```
+
+# 2.5
+```{r}
+tidy_books %>%
+  anti_join(stop_words) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100))
+
+tidy_books %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(colors = c("gray20", "gray80"),
+                   max.words = 100)
+```
+
+# 2.6
+```{r}
+PandP_sentences <- tibble(text = prideprejudice) %>% 
+  unnest_tokens(sentence, text, token = "sentences")
+PandP_sentences$sentence[2]
+
+austen_chapters <- austen_books() %>%
+  group_by(book) %>%
+  unnest_tokens(chapter, text, token = "regex", 
+                pattern = "Chapter|CHAPTER [\\dIVXLC]") %>%
+  ungroup()
+
+austen_chapters %>% 
+  group_by(book) %>% 
+  summarise(chapters = n())
+
+bingnegative <- get_sentiments("bing") %>% 
+  filter(sentiment == "negative")
+
+wordcounts <- tidy_books %>%
+  group_by(book, chapter) %>%
+  summarize(words = n())
+
+tidy_books %>%
+  semi_join(bingnegative) %>%
+  group_by(book, chapter) %>%
+  summarize(negativewords = n()) %>%
+  left_join(wordcounts, by = c("book", "chapter")) %>%
+  mutate(ratio = negativewords/words) %>%
+  filter(chapter != 0) %>%
+  top_n(1) %>%
+  ungroup()
+```
+
+# Now I extend by using a different corpus and another sentiment lexicon. Use the loughran lexicon.
+```{r}
+# Let's grab a text from the gutenberg package
+# Let's work with the US constitution. I wonder if there should be a sentiment in the
+# historical document from the founding fathers
+gutenberg_metadata %>% filter(title == "The United States Constitution")
+const_id = 5
+const_text = gutenberg_download(const_id)
+# trim out the meta data stuff at the beginning
+const_text = const_text[-(1:34),]
+
+# get in tidy form, and maybe add sections
+tidy_const <- const_text %>%
+  mutate(linenumber = row_number(),
+         article = cumsum(str_detect(text, regex("^article", ignore_case = TRUE))),
+         section = cumsum(str_detect(text, regex("^section", ignore_case = TRUE)))) %>%
+  ungroup() %>%
+  unnest_tokens(word, text)
+```
+
+```{r}
+divisor = 10
+const_sentiment <- tidy_const %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(article, index = linenumber %/% divisor, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative)
+
+# plots of sentiment per article
+ggplot(const_sentiment, aes(index, sentiment, fill = article)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~article, ncol = 2, scales = "free_x")
+```
+
+```{r}
+afinn <- tidy_const %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(index = linenumber %/% divisor) %>% 
+  summarise(sentiment = sum(value)) %>% 
+  mutate(method = "AFINN")
+
+bing_and_nrc_and_lough <- bind_rows(tidy_const %>% 
+                            inner_join(get_sentiments("bing")) %>%
+                            mutate(method = "Bing et al."),
+                          tidy_const %>%
+                            inner_join(get_sentiments("loughran")) %>%
+                            mutate(method = "Loughran"),
+                          tidy_const %>% 
+                            inner_join(get_sentiments("nrc") %>% 
+                                         filter(sentiment %in% c("positive", 
+                                                                 "negative"))) %>%
+                            mutate(method = "NRC")) %>%
+  count(method, index = linenumber %/% divisor, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative)
+
+bind_rows(afinn, 
+          bing_and_nrc_and_lough) %>%
+  ggplot(aes(index, sentiment, fill = method)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~method, ncol = 1, scales = "free_y")
+
+get_sentiments("nrc") %>% 
+     filter(sentiment %in% c("positive", 
+                             "negative")) %>% 
+  count(sentiment)
+
+get_sentiments("bing") %>% 
+  count(sentiment)
+```
+
+Here we added the lexicon Loughran. What is interesting is why NRC has the longer index. I believe it has to do with which words are recognied in each lexicon. We can see the Loughran looks particularly negative while NRC appears most positive.
+
+```{r}
+bing_word_counts <- tidy_const %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup()
+bing_word_counts
+bing_word_counts %>%
+  group_by(sentiment) %>%
+  top_n(10) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(y = "Contribution to sentiment",
+       x = NULL) +
+  coord_flip()
+
+custom_stop_words <- bind_rows(tibble(word = c("vice"), 
+                                          lexicon = c("custom")), 
+                               stop_words)
+```
+I suspect that vice here is incorrectly being treated as a negative word when it is actually referring to the vice president.
+
+```{r}
+tidy_const %>%
+  anti_join(custom_stop_words) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100))
+
+tidy_const %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(colors = c("gray20", "gray80"),
+                   max.words = 100)
+```
+
+```{r}
+##const_sentences <- tibble(text = const_text$text) %>% 
+#  unnest_tokens
+
+bingnegative <- get_sentiments("bing") %>% 
+  filter(sentiment == "negative")
+
+wordcounts <- tidy_const %>%
+  group_by(article, section) %>%
+  summarize(words = n())
+
+tidy_const %>%
+  semi_join(bingnegative) %>%
+  group_by(article, section) %>%
+  summarize(negativewords = n()) %>%
+  left_join(wordcounts, by = c("article", "section")) %>%
+  mutate(ratio = negativewords/words) %>%
+  arrange(desc(ratio)) %>%
+  ungroup()
+```
+
+It looks like Article 2 Section 4 (14 in my analysis) is the most negative. According to [this website](https://www.usconstitution.net/xconst.html) this article talks about disqualifications of president, vice president, and all civil officers and removal from office via impeachment, conviction of treason, bribery, and other high crimes and misdemeanors. Seems very accurate to be the most negative.
+
+Looking at the loughran lexicon, it appears to be aimed for determining what are liabilities from financial documents. Aside from positive and negative sentiments, there are litiguous, constraining, superfluous, and uncertainty. I'll dive a bit deeper into uncertanty.
+```{r}
+uncertainness <- tidy_const %>%
+  inner_join(get_sentiments("loughran")) %>%
+  count(article, index = linenumber %/% divisor, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  select(article, uncertainty) %>%
+  group_by(article) %>%
+  summarise(sum = sum(uncertainty), n = n()) %>%
+  mutate(uncertainness = sum / n) %>%
+  arrange(desc(uncertainness)) %>%
+  ungroup
+
+uncertainness
+
+ ggplot(head(uncertainness, 4), aes(x = reorder(article, -uncertainness), y = uncertainness, fill = uncertainness)) +
+  geom_col(show.legend = FALSE) +
+  labs(x = "Article Number", y = "Uncertainty")
+```
+
+Article 5 is about how to make amendments. It seems most likely to contain the most words about uncertainty because it is how the Constitution gets added to. Article 2 is about the Executive branch. This may make sense because the founding fathers were wary of anyone becoming like a king and maybe they were uncertain how much powers the executive branch should have. Article 1 is about the legislative branch and Article 4 is about the states.
+
+
+Citation:
+"Silge, Julia, and David Robinson. Text mining with R: A tidy approach. " O'Reilly Media, Inc.", 2017."
