@@ -1,0 +1,40 @@
+---
+title: "Redfin Recommendation System"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+## Justin Hsi
+
+## Discussion/Assignment 12
+
+
+
+# Redfin
+
+Redfin is a website where one can go for most things pertaining to real estate. It is a place for home buyers/sellers to look at homes, compare home values, and get in touch with real estate agents to aid in the process of buying and selling homes. Some things that Redfin recommends to users include: nearby similar homes, redfin estimates of market and rental value, and redfin agents to connect with.
+
+
+# Scenario Design
+### Target Users
+The target users (as of now) are those transacting in the real estate business. This includes home buyers and sellers, real estate agents. In certain geographies Redfin also does mortgage and title, can act as a broker (Redfin Brokerage), a partner in fixing homes and selling them (Redfin Concierge)^1^. Redfin as a business is targeting the estimated $82 billion market of real estate comissions, the bulk of which are coming from buyers/sellers. Thus, Redfin's goal as a business is to make sure as many real estate transactions happen as possible, which in turn should generate revenue and profits for Redfin.
+
+### User Key Goals
+Users are coming to Redfin because they are thinking about either buying or selling a house. As with most websites that have recommendation systems, users are already slightly incentivized to transact, and Redfin's goal is to make the transaction happen. Specifically, buyers want to be able to see a plethora of listings to compare houses, price points, location, and features of houses. They want to be able to make informed decisions about what types of houses are in their budget range, which homes are on market right now, and what various real estate trends are in their localities. Sellers want to make sure their listings are updated, accurate, and contain all relevant information for buyers.
+
+### How to help users reach their goals?
+A major function of markets is price discovery, and Redfin in the real estate market is no exception. In this regard, Redfin needs to build machine learning systems that can accurately price the value of homes. There are few public specifics about how Redfin does this, but my guess is that would be that their approach is similar to competitor Zillow^2,4,5^. From looking at entries of those who participated on the Kaggle Zestimate competition, various forms of gradient boosting (trees) seemed to be successful. Gradient boosted methods are generally the idea of repeatedly fitting a model/tree on the residual. E.g fit the first tree that gives these predictions. Then fit a second tree to fit the residual of the first model and so on and so forth. This has proven to be quite powerful with tabular data like kitchens: 2, bedrooms:5, has_pool: True. There is evidence from a recent paper^3^ that computer vision can be combined to improve estimates of value. This is logical because thinking about the buying process, a buyer first becomes interested after looking at listing pictures and usually then goes to see the house in person. The buying process is a very visual one, and the better the house looks, the higher the price it can fetch (but I'm sure we have all heard horror stories of homes that looked great but had many expensive problems about them). Details are in the paper, but at a high level, a deep convolution neural network is trained on interior and exterior photos (Zillow, Houzz) to classify photos to rooms/exterior and then represent them as a vector that represent "luxuriousness". I strongly suggest skimming the paper for lots of example images. This vector is concatenated with a normalized metadata vector (the traditional tabular data) and fed through a final regression layer that predicts the actual price. This price is compared to actual purchase price and thus, loss can be calcualted and used for training. Specifically in terms of recommendation, some of the inputs of the price predictor can be used to build an index of houses. So the concatenated vector that is fed into the regression layer can be stored in a table that can be used for similarity search via cosine distance. This can be done with an item-to-item treatment similar as mentioned in the Amazon example. 
+
+### Final Remarks
+I think the incorporation of vision into the price estimation is the most impactful improvement, mostly because it incorporates new data that has never been used before. Sure, the improvements on models from the Kaggle competitions help, but there's only so much information you can extract from existing data. If you take it literally that a picture is worth a thousand words, and consider that each house listing has 15 or more pictures, that is a lot more data to give more accurate predictions. It is also always exciting to see different areas of data science overlapping (tabular data + computer vision) to push boundaries further.
+
+# References
+1. http://investors.redfin.com/static-files/7fc3bd99-0d2f-44fd-9f4c-d726aa509396
+2. https://www.redfin.com/blog/building-the-redfin-cma-tool-an-inside-look-at-real-estate-agent-and-engineer-collaboration-at-redfin/
+3. https://www.researchgate.net/publication/318528081_Vision-based_Real_Estate_Price_Estimation
+4. https://www.geekwire.com/2019/meet-zillow-prize-winners-get-1m-bragging-rights-zestimate-beating-algorithm/
+5. https://www.kaggle.com/c/zillow-prize-1/discussion/33899
+
+
