@@ -1,0 +1,123 @@
+---
+title: "Project 4"
+author: "Justin Hsi"
+date: "4/25/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tm)
+library(caTools)
+library(RTextTools)
+library(kableExtra)
+#library(randomForest)
+#library(e1071)
+#library(caret)
+```
+
+# For this project, you can start with a spam/ham dataset, then predict the class of new documents (either withheld from the training dataset or from another source such as your own spam folder)
+
+First we need to get the data into dataframes.
+```{r}
+ham_dir = 'ham'
+spam_dir = 'spam'
+
+ham_files = list.files(path = ham_dir, full.names = T)
+spam_files = list.files(path = spam_dir, full.names = T)
+
+ham = data.frame(do.call(rbind, lapply(ham_files, read_file)))
+names(ham)[1] = 'Text'
+ham$Spam = 0
+head(ham, 3)
+
+spam = data.frame(do.call(rbind, lapply(spam_files, read_file)))
+names(spam)[1] = 'Text'
+spam$Spam = 1
+head(spam, 3)
+```
+
+Do some conversion as to utf as one of the emails throws an error.
+```{r}
+# Need some conversion
+ham$Text = iconv(enc2utf8(as.character(ham$Text)))
+spam$Text = iconv(enc2utf8(as.character(spam$Text)))
+ham_c = VCorpus(VectorSource(ham$Text))
+meta(ham_c, tag = "type") = 0
+spam_c = VCorpus(VectorSource(spam$Text))
+meta(spam_c, tag = "type") = 1
+corpus = c(ham_c, spam_c)
+```
+
+Create a single dataframe. Create the corpus with the following pre-processing steps
+1) Build a new corpus variable called corpus.
+2) Using tm_map, convert the text to lowercase.
+3) Using tm_map, remove all punctuation from the corpus.
+4) Using tm_map, remove all English stopwords from the corpus.
+5) Using tm_map, stem the words in the corpus.
+6) Build a document term matrix from the corpus, called dtm.
+```{r}
+#data$Text = iconv(enc2utf8(as.character(data$Text))) # need proper encoding to not error?
+#corpus = VCorpus(VectorSource(data$Text))
+corpus = tm_map(corpus, tolower)
+corpus = tm_map(corpus, PlainTextDocument)
+corpus = tm_map(corpus, removePunctuation)
+corpus = tm_map(corpus, removeWords, stopwords("english"))
+corpus = tm_map(corpus, stemDocument)
+```
+
+
+Now we can make a document term matrix and remove the sparse terms.
+```{r}
+dtm = DocumentTermMatrix(corpus)
+spdtm = removeSparseTerms(dtm, 0.95)
+spdtm
+```
+
+At this point, we can look at the word frequency to get an idea of what kind of words are common
+```{r}
+dtm2 = as.matrix(spdtm)
+frequency = colSums(dtm2)
+frequency = sort(frequency, decreasing=T)
+table_freq = head(frequency, 15)
+kable(table_freq, "html", escape = F) %>%
+  kable_styling("striped", full_width = T) %>%
+  column_spec(1, bold = T)
+
+wf = data.frame(word=names(frequency), frequency=frequency)
+
+p = ggplot(subset(wf, frequency>2000), aes(x = reorder(word, -frequency), y = frequency)) +
+  geom_bar(stat = "identity", fill='#35a2c4') +
+  theme(axis.text.x=element_text(angle=90, hjust=1)) + 
+  theme(panel.background = element_rect(fill = '#adc8d1'))
+p
+```
+
+Create a dataframe from teh term document matrix and add the labels
+```{r}
+sparse_df = as.data.frame(as.matrix(spdtm))
+meta_type = as.vector(unlist(meta(corpus)))
+#meta_data = as.double(type=unlist(meta_type))
+sparse_df$LABEL = meta_type
+head(sparse_df)
+```
+Now we can split the train and test sets, and build a generalized linear model
+```{r}
+set.seed(42)
+spl = sample.split(sparse_df$LABEL, 0.8)
+train = subset(sparse_df, spl == TRUE)
+test = subset(sparse_df, spl == FALSE)
+
+spam_glm = glm(LABEL~., data=train, family="binomial")
+```
+```{r}
+pred = predict(spam_glm, newdata = test, type="response")
+table(test$LABEL, pred > 0.5)
+(483+285)/nrow(test)
+# We see the glm achieved 98.58% accuracy
+```
+
+References:
+https://rpubs.com/anilcs13m/126170
+https://rstudio-pubs-static.s3.amazonaws.com/378660_18a426eb1a864413a98c8c2c20df7e7b.html
